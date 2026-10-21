@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --forest: #2c4a3b; --forest-dark: #1c3228; --moss: #6b8f71; 
@@ -30,23 +30,14 @@
 
   #panel-body { padding: 14px 16px 16px; }
 
-  .input-group { margin-bottom: 12px; }
-  .input-group label { font-size: 11.5px; font-weight: 600; color: #5b5a4e; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;}
-  .input-group select { 
+  .algo-selector { margin-bottom: 15px; }
+  .algo-selector label { font-size: 12px; font-weight: 600; color: #5b5a4e; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;}
+  .algo-selector select { 
     width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); 
-    background: white; font-family: 'Inter', sans-serif; font-size: 13.5px; outline: none;
+    background: white; font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
   }
 
-  .btn-row { display: flex; gap: 8px; margin-top: 15px; margin-bottom: 15px;}
-  .btn-row button {
-    flex: 1; padding: 9px; border: none; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s ease;
-  }
-  #search-btn { background: var(--forest); color: var(--sand); }
-  #search-btn:hover { background: var(--forest-dark); }
-  #clear-btn { background: #e0d8c3; color: var(--ink); }
-  #clear-btn:hover { background: #d1c8b0; }
-
-  #status-line { display: flex; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.4; min-height: 20px; margin-bottom: 5px; padding-top: 10px; border-top: 1px solid var(--line);}
+  #status-line { display: flex; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.4; min-height: 20px; margin-bottom: 5px;}
   
   .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .dot-start { background: var(--moss); }
@@ -65,35 +56,18 @@
   #error-msg { margin-top: 10px; padding: 8px 10px; background: #fbeae4; border: 1px solid #e6b6a3; border-radius: 6px; font-size: 12.5px; color: #8a3a22; display: none; }
   #error-msg.show { display: block; }
 
+  #clear-btn {
+    margin-top: 15px; width: 100%; padding: 9px; background: var(--forest); color: var(--sand);
+    border: none; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background 0.15s ease;
+  }
+  #clear-btn:hover { background: var(--forest-dark); }
+
   .campus-pin {
     width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.35); border: 2px solid var(--sand);
   }
   .campus-pin span { transform: rotate(45deg); color: white; font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 700; }
   .pin-start { background: var(--moss); }
   .pin-end { background: var(--clay); }
-
-  /* Google-style Multi-line Labels */
-  .google-label {
-    color: #ffffff;
-    font-family: 'Roboto', Arial, sans-serif;
-    font-weight: 500;
-    letter-spacing: 0.2px;
-    line-height: 1.2;
-    text-shadow: 
-      0px 0px 2px rgba(0,0,0,0.9),
-      0px 0px 3px rgba(0,0,0,0.8),
-      0px 0px 5px rgba(0,0,0,0.9);
-    text-align: center;
-    pointer-events: none; /* Let clicks pass through to the map */
-    transition: font-size 0.2s ease, opacity 0.2s ease, max-width 0.2s ease;
-    transform: translate(-50%, -50%); /* Centers the text block perfectly */
-  }
-  
-  /* Dynamic scaling based on zoom level */
-  .map-zoom-14 .google-label, .map-zoom-15 .google-label { opacity: 0; font-size: 0px; }
-  .map-zoom-16 .google-label { opacity: 0.7; font-size: 10px; font-weight: 400; max-width: 60px; white-space: normal;}
-  .map-zoom-17 .google-label { opacity: 0.9; font-size: 11.5px; max-width: 80px; white-space: normal;}
-  .map-zoom-18 .google-label, .map-zoom-19 .google-label, .map-zoom-20 .google-label { opacity: 1; font-size: 13.5px; max-width: 120px; white-space: normal;}
 </style>
 </head>
 <body>
@@ -104,21 +78,7 @@
   </div>
   <div id="panel-body">
     
-    <div class="input-group">
-      <label>Start Location</label>
-      <select id="start-select">
-        <option value="">-- Tap map or select here --</option>
-      </select>
-    </div>
-
-    <div class="input-group">
-      <label>End Location</label>
-      <select id="end-select">
-        <option value="">-- Tap map or select here --</option>
-      </select>
-    </div>
-
-    <div class="input-group">
+    <div class="algo-selector">
       <label>Routing Algorithm</label>
       <select id="algo-select">
         <option value="dijkstra">Dijkstra's Algorithm</option>
@@ -127,14 +87,9 @@
       </select>
     </div>
 
-    <div class="btn-row">
-      <button id="search-btn" onclick="runSearch()">Find Route</button>
-      <button id="clear-btn" onclick="clearMap()">Clear</button>
-    </div>
-
     <div id="status-line">
       <span class="dot dot-idle"></span>
-      <span id="status-text">Ready to route</span>
+      <span id="status-text">Tap the map to set a start point</span>
     </div>
 
     <div id="result">
@@ -144,6 +99,8 @@
     </div>
 
     <div id="error-msg"></div>
+
+    <button id="clear-btn" onclick="clearMap()">Clear Map</button>
 
   </div>
 </div>
@@ -155,7 +112,7 @@ const BACKEND_URL = 'http://127.0.0.1:8000/route';
 const map = L.map('map', { zoomControl: false }).setView([6.713, 80.789], 16);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
     maxZoom: 20, attribution: '© Google'
 }).addTo(map);
 
@@ -172,8 +129,6 @@ const statDistance = document.getElementById('stat-distance');
 const statTime = document.getElementById('stat-time');
 const statMs = document.getElementById('stat-ms');
 const algoSelect = document.getElementById('algo-select');
-const startSelect = document.getElementById('start-select');
-const endSelect = document.getElementById('end-select');
 
 function pinIcon(label, cls) {
   return L.divIcon({ className: '', html: `<div class="campus-pin ${cls}"><span>${label}</span></div>`, iconSize: [26, 26], iconAnchor: [13, 26] });
@@ -193,7 +148,6 @@ function metersToWalkTime(meters) {
   return minutes < 1 ? '< 1 min' : Math.round(minutes) + ' min';
 }
 
-// Reusable function to calculate and draw the route
 async function calculateRoute(startLatLng, endLatLng) {
   isLoading = true;
   setStatus('Calculating route...', null, true);
@@ -213,9 +167,6 @@ async function calculateRoute(startLatLng, endLatLng) {
         color: '#ffffff', weight: 5, opacity: 0.95, lineJoin: 'round'
       }).addTo(map);
       
-      // Removed map.fitBounds to prevent auto-zooming
-      // map.fitBounds(currentRoute.getBounds(), { padding: [40, 40] });
-
       statDistance.textContent = `${Math.round(data.distance)} m`;
       statTime.textContent = metersToWalkTime(data.distance);
       statMs.textContent = `${data.execution_time_ms.toFixed(3)} ms`; 
@@ -233,35 +184,6 @@ async function calculateRoute(startLatLng, endLatLng) {
   }
 }
 
-// Triggered by the "Find Route" button
-function runSearch() {
-    if (!startSelect.value || !endSelect.value) {
-        showError("Please select both a Start and End location from the dropdowns.");
-        return;
-    }
-    
-    // Clear the map but keep dropdown values
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-    if (currentRoute) map.removeLayer(currentRoute);
-    resultBox.classList.remove('show');
-
-    const startCoords = JSON.parse(startSelect.value);
-    const endCoords = JSON.parse(endSelect.value);
-    
-    clicks = [startCoords, endCoords]; // Sync state
-
-    markers.push(L.marker(startCoords, { icon: pinIcon('A', 'pin-start') }).addTo(map));
-    markers.push(L.marker(endCoords, { icon: pinIcon('B', 'pin-end') }).addTo(map));
-    
-    // Move camera to center roughly between the two points
-    const bounds = L.latLngBounds([startCoords, endCoords]);
-    map.fitBounds(bounds, { padding: [60, 60] });
-
-    calculateRoute(startCoords, endCoords);
-}
-
-// Triggered by clicking the map
 map.on('click', async function(e) {
   if (isLoading) return; 
   if (clicks.length >= 2) {
@@ -270,10 +192,6 @@ map.on('click', async function(e) {
 
   hideError();
   clicks.push(e.latlng);
-
-  // Reset dropdowns if user clicks map to avoid confusion
-  startSelect.value = "";
-  endSelect.value = "";
 
   if (clicks.length === 1) {
     markers.push(L.marker(e.latlng, { icon: pinIcon('A', 'pin-start') }).addTo(map));
@@ -293,12 +211,9 @@ function clearMap() {
   currentRoute = null;
   isLoading = false;
   
-  startSelect.value = "";
-  endSelect.value = "";
-  
   resultBox.classList.remove('show');
   hideError();
-  setStatus('Ready to route', 'dot-idle', false);
+  setStatus('Tap the map to set a start point', 'dot-idle', false);
 }
 
 async function loadGraphOverlay() {
@@ -314,43 +229,6 @@ async function loadGraphOverlay() {
     }
 }
 
-function updateZoomClass() {
-    const zoom = map.getZoom();
-    const mapEl = document.getElementById('map');
-    mapEl.className = mapEl.className.replace(/\bmap-zoom-\d+\b/g, '');
-    mapEl.classList.add(`map-zoom-${zoom}`);
-}
-map.on('zoomend', updateZoomClass);
-updateZoomClass(); 
-
-async function loadLocations() {
-    try {
-        const response = await fetch('http://127.0.0.1:8000/locations');
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            data.locations.forEach(loc => {
-                // 1. Draw the label on the map
-                const labelIcon = L.divIcon({
-                    className: 'google-label',
-                    html: loc.name,
-                    iconSize: null, 
-                    iconAnchor: [0, 0] 
-                });
-                L.marker([loc.lat, loc.lng], { icon: labelIcon, interactive: false }).addTo(map);
-
-                // 2. Add to both dropdown menus
-                const optionValue = JSON.stringify({ lat: loc.lat, lng: loc.lng });
-                startSelect.add(new Option(loc.name, optionValue));
-                endSelect.add(new Option(loc.name, optionValue));
-            });
-        }
-    } catch (err) {
-        console.error("Failed to load locations:", err);
-    }
-}
-
-loadLocations();
 loadGraphOverlay(); 
 </script>
 </body>
