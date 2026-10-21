@@ -3,166 +3,97 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Campus Navigator</title>
+<title>Campus Navigator - Research Edition</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --forest: #2c4a3b;
-    --forest-dark: #1c3228;
-    --moss: #6b8f71;
-    --sand: #f4efe4;
-    --clay: #c96a4e;
-    --ink: #22281f;
-    --line: #dfd8c6;
+    --forest: #2c4a3b; --forest-dark: #1c3228; --moss: #6b8f71; 
+    --sand: #f4efe4; --clay: #c96a4e; --ink: #22281f; --line: #dfd8c6;
   }
 
   * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-    color: var(--ink);
-  }
-
+  body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; color: var(--ink); }
   #map { height: 100vh; width: 100vw; background: #e9e4d6; }
 
   #panel {
-    position: absolute;
-    top: 18px;
-    left: 18px;
-    z-index: 1000;
-    background: var(--sand);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    box-shadow: 0 6px 20px rgba(28, 50, 40, 0.18);
-    width: 280px;
-    overflow: hidden;
+    position: absolute; top: 18px; left: 18px; z-index: 1000;
+    background: var(--sand); border: 1px solid var(--line);
+    border-radius: 10px; box-shadow: 0 6px 20px rgba(28, 50, 40, 0.18);
+    width: 320px; overflow: hidden;
   }
 
-  #panel-header {
-    background: var(--forest);
-    color: var(--sand);
-    padding: 14px 16px;
+  #panel-header { background: var(--forest); color: var(--sand); padding: 14px 16px; }
+  #panel-header h1 { font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 600; margin: 0; }
+
+  #panel-body { padding: 14px 16px 16px; }
+
+  .input-group { margin-bottom: 12px; }
+  .input-group label { font-size: 11.5px; font-weight: 600; color: #5b5a4e; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;}
+  .input-group select { 
+    width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); 
+    background: white; font-family: 'Inter', sans-serif; font-size: 13.5px; outline: none;
   }
 
-  #panel-header h1 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 17px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: 0.2px;
+  .btn-row { display: flex; gap: 8px; margin-top: 15px; margin-bottom: 15px;}
+  .btn-row button {
+    flex: 1; padding: 9px; border: none; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s ease;
   }
+  #search-btn { background: var(--forest); color: var(--sand); }
+  #search-btn:hover { background: var(--forest-dark); }
+  #clear-btn { background: #e0d8c3; color: var(--ink); }
+  #clear-btn:hover { background: #d1c8b0; }
 
-  #panel-body {
-    padding: 14px 16px 16px;
-  }
-
-  #status-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13.5px;
-    line-height: 1.4;
-    color: var(--ink);
-    min-height: 20px;
-  }
-
-  .dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  #status-line { display: flex; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.4; min-height: 20px; margin-bottom: 5px; padding-top: 10px; border-top: 1px solid var(--line);}
+  
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .dot-start { background: var(--moss); }
   .dot-end { background: var(--clay); }
   .dot-idle { background: #b7ae98; }
-
-  .spinner {
-    width: 13px;
-    height: 13px;
-    border: 2px solid var(--line);
-    border-top-color: var(--forest);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    flex-shrink: 0;
-  }
-
+  .spinner { width: 13px; height: 13px; border: 2px solid var(--line); border-top-color: var(--forest); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  #result {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
-    display: none;
-  }
+  #result { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); display: none; }
   #result.show { display: block; }
-
-  #result .stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    margin-bottom: 3px;
-  }
+  #result .stat-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
   #result .stat-row span:first-child { color: #5b5a4e; }
   #result .stat-row span:last-child { font-weight: 600; }
+  .ms-highlight { color: var(--clay); font-family: monospace; font-size: 14px;}
 
-  #error-msg {
-    margin-top: 10px;
-    padding: 8px 10px;
-    background: #fbeae4;
-    border: 1px solid #e6b6a3;
-    border-radius: 6px;
-    font-size: 12.5px;
-    color: #8a3a22;
-    display: none;
-  }
+  #error-msg { margin-top: 10px; padding: 8px 10px; background: #fbeae4; border: 1px solid #e6b6a3; border-radius: 6px; font-size: 12.5px; color: #8a3a22; display: none; }
   #error-msg.show { display: block; }
 
-  #clear-btn {
-    margin-top: 12px;
-    width: 100%;
-    padding: 9px;
-    background: var(--forest);
-    color: var(--sand);
-    border: none;
-    border-radius: 6px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13.5px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  #clear-btn:hover { background: var(--forest-dark); }
-  #clear-btn:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; }
-
   .campus-pin {
-    width: 26px;
-    height: 26px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    border: 2px solid var(--sand);
+    width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.35); border: 2px solid var(--sand);
   }
-  .campus-pin span {
-    transform: rotate(45deg);
-    color: white;
-    font-family: 'Outfit', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-  }
+  .campus-pin span { transform: rotate(45deg); color: white; font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 700; }
   .pin-start { background: var(--moss); }
   .pin-end { background: var(--clay); }
 
-  @media (max-width: 480px) {
-    #panel { width: calc(100vw - 36px); }
+  /* Google-style Multi-line Labels */
+  .google-label {
+    color: #ffffff;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1.2;
+    text-shadow: 
+      0px 0px 2px rgba(0,0,0,0.9),
+      0px 0px 3px rgba(0,0,0,0.8),
+      0px 0px 5px rgba(0,0,0,0.9);
+    text-align: center;
+    pointer-events: none; /* Let clicks pass through to the map */
+    transition: font-size 0.2s ease, opacity 0.2s ease, max-width 0.2s ease;
+    transform: translate(-50%, -50%); /* Centers the text block perfectly */
   }
+  
+  /* Dynamic scaling based on zoom level */
+  .map-zoom-14 .google-label, .map-zoom-15 .google-label { opacity: 0; font-size: 0px; }
+  .map-zoom-16 .google-label { opacity: 0.7; font-size: 10px; font-weight: 400; max-width: 60px; white-space: normal;}
+  .map-zoom-17 .google-label { opacity: 0.9; font-size: 11.5px; max-width: 80px; white-space: normal;}
+  .map-zoom-18 .google-label, .map-zoom-19 .google-label, .map-zoom-20 .google-label { opacity: 1; font-size: 13.5px; max-width: 120px; white-space: normal;}
 </style>
 </head>
 <body>
@@ -172,19 +103,48 @@
     <h1>Campus Navigator</h1>
   </div>
   <div id="panel-body">
+    
+    <div class="input-group">
+      <label>Start Location</label>
+      <select id="start-select">
+        <option value="">-- Tap map or select here --</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>End Location</label>
+      <select id="end-select">
+        <option value="">-- Tap map or select here --</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>Routing Algorithm</label>
+      <select id="algo-select">
+        <option value="dijkstra">Dijkstra's Algorithm</option>
+        <option value="astar">A* (A-Star) Search</option>
+        <option value="bfs">Breadth-First Search (BFS)</option>
+      </select>
+    </div>
+
+    <div class="btn-row">
+      <button id="search-btn" onclick="runSearch()">Find Route</button>
+      <button id="clear-btn" onclick="clearMap()">Clear</button>
+    </div>
+
     <div id="status-line">
       <span class="dot dot-idle"></span>
-      <span id="status-text">Tap the map to set a start point</span>
+      <span id="status-text">Ready to route</span>
     </div>
 
     <div id="result">
       <div class="stat-row"><span>Distance</span><span id="stat-distance">—</span></div>
       <div class="stat-row"><span>Est. walk</span><span id="stat-time">—</span></div>
+      <div class="stat-row"><span>Exec. Time</span><span id="stat-ms" class="ms-highlight">—</span></div>
     </div>
 
     <div id="error-msg"></div>
 
-    <button id="clear-btn" onclick="clearMap()">Clear route</button>
   </div>
 </div>
 
@@ -192,15 +152,11 @@
 
 <script>
 const BACKEND_URL = 'http://127.0.0.1:8000/route';
-
-// Centered on Sabaragamuwa University
 const map = L.map('map', { zoomControl: false }).setView([6.713, 80.789], 16);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-// Load Google Maps Satellite Hybrid tiles
-L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '© Google'
+L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 20, attribution: '© Google'
 }).addTo(map);
 
 let clicks = [];
@@ -214,65 +170,37 @@ const resultBox = document.getElementById('result');
 const errorBox = document.getElementById('error-msg');
 const statDistance = document.getElementById('stat-distance');
 const statTime = document.getElementById('stat-time');
+const statMs = document.getElementById('stat-ms');
+const algoSelect = document.getElementById('algo-select');
+const startSelect = document.getElementById('start-select');
+const endSelect = document.getElementById('end-select');
 
 function pinIcon(label, cls) {
-  return L.divIcon({
-    className: '',
-    html: `<div class="campus-pin ${cls}"><span>${label}</span></div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 26]
-  });
+  return L.divIcon({ className: '', html: `<div class="campus-pin ${cls}"><span>${label}</span></div>`, iconSize: [26, 26], iconAnchor: [13, 26] });
 }
 
 function setStatus(text, dotClass, spinning) {
   statusText.textContent = text;
-  if (spinning) {
-    statusDot.outerHTML = '<span class="spinner"></span>';
-  } else {
-    const el = document.querySelector('#status-line .dot, #status-line .spinner');
-    el.outerHTML = `<span class="dot ${dotClass}"></span>`;
-  }
+  if (spinning) statusDot.outerHTML = '<span class="spinner"></span>';
+  else document.querySelector('#status-line .dot, #status-line .spinner').outerHTML = `<span class="dot ${dotClass}"></span>`;
 }
 
-function showError(message) {
-  errorBox.textContent = message;
-  errorBox.classList.add('show');
-}
-
-function hideError() {
-  errorBox.classList.remove('show');
-}
+function showError(message) { errorBox.textContent = message; errorBox.classList.add('show'); }
+function hideError() { errorBox.classList.remove('show'); }
 
 function metersToWalkTime(meters) {
-  // Rough estimate at 5 km/h walking pace
   const minutes = meters / 1000 / 5 * 60;
-  if (minutes < 1) return '< 1 min';
-  return Math.round(minutes) + ' min';
+  return minutes < 1 ? '< 1 min' : Math.round(minutes) + ' min';
 }
 
-map.on('click', async function(e) {
-  // Still prevent clicking if we are currently waiting for the Python backend
-  if (isLoading) return; 
-
-  // If two markers are already on the map, clear everything to start a fresh route
-  if (clicks.length >= 2) {
-      clearMap();
-  }
-
-  hideError();
-  clicks.push(e.latlng);
-
-  if (clicks.length === 1) {
-    markers.push(L.marker(e.latlng, { icon: pinIcon('A', 'pin-start') }).addTo(map));
-    setStatus('Tap the map to set an end point', 'dot-end', false);
-    return;
-  }
-
-  markers.push(L.marker(e.latlng, { icon: pinIcon('B', 'pin-end') }).addTo(map));
+// Reusable function to calculate and draw the route
+async function calculateRoute(startLatLng, endLatLng) {
   isLoading = true;
-  setStatus('Finding the shortest path…', null, true);
+  setStatus('Calculating route...', null, true);
+  hideError();
 
-  const url = `${BACKEND_URL}?start_lat=${clicks[0].lat}&start_lon=${clicks[0].lng}&end_lat=${clicks[1].lat}&end_lon=${clicks[1].lng}`;
+  const selectedAlgo = algoSelect.value;
+  const url = `${BACKEND_URL}?start_lat=${startLatLng.lat}&start_lon=${startLatLng.lng}&end_lat=${endLatLng.lat}&end_lon=${endLatLng.lng}&algo=${selectedAlgo}`;
 
   try {
     const response = await fetch(url);
@@ -282,27 +210,79 @@ map.on('click', async function(e) {
     if (data.status === 'success') {
       const routeCoordinates = data.path.map(p => [p.lat, p.lng]);
       currentRoute = L.polyline(routeCoordinates, {
-        color: '#ffffff', // Changed from #2c4a3b to white
-        weight: 5,
-        opacity: 0.95, // Slightly increased opacity so white pops against the satellite background
-        lineJoin: 'round'
+        color: '#ffffff', weight: 5, opacity: 0.95, lineJoin: 'round'
       }).addTo(map);
-      map.fitBounds(currentRoute.getBounds(), { padding: [40, 40] });
+      
+      // Removed map.fitBounds to prevent auto-zooming
+      // map.fitBounds(currentRoute.getBounds(), { padding: [40, 40] });
 
       statDistance.textContent = `${Math.round(data.distance)} m`;
       statTime.textContent = metersToWalkTime(data.distance);
+      statMs.textContent = `${data.execution_time_ms.toFixed(3)} ms`; 
       resultBox.classList.add('show');
       setStatus('Route found', 'dot-end', false);
     } else {
-      showError('No path could be found between these two points. Try picking locations closer to a walkway.');
+      showError('No path could be found. Try picking locations closer to a walkway.');
       setStatus('No route found — try again', 'dot-idle', false);
     }
   } catch (err) {
-    showError('Could not reach the routing server. Make sure the backend is running at ' + BACKEND_URL.replace('/route', '') + '.');
+    showError('Could not reach the routing server. Make sure the backend is running.');
     setStatus('Connection error', 'dot-idle', false);
   } finally {
     isLoading = false;
   }
+}
+
+// Triggered by the "Find Route" button
+function runSearch() {
+    if (!startSelect.value || !endSelect.value) {
+        showError("Please select both a Start and End location from the dropdowns.");
+        return;
+    }
+    
+    // Clear the map but keep dropdown values
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    if (currentRoute) map.removeLayer(currentRoute);
+    resultBox.classList.remove('show');
+
+    const startCoords = JSON.parse(startSelect.value);
+    const endCoords = JSON.parse(endSelect.value);
+    
+    clicks = [startCoords, endCoords]; // Sync state
+
+    markers.push(L.marker(startCoords, { icon: pinIcon('A', 'pin-start') }).addTo(map));
+    markers.push(L.marker(endCoords, { icon: pinIcon('B', 'pin-end') }).addTo(map));
+    
+    // Move camera to center roughly between the two points
+    const bounds = L.latLngBounds([startCoords, endCoords]);
+    map.fitBounds(bounds, { padding: [60, 60] });
+
+    calculateRoute(startCoords, endCoords);
+}
+
+// Triggered by clicking the map
+map.on('click', async function(e) {
+  if (isLoading) return; 
+  if (clicks.length >= 2) {
+      clearMap();
+  }
+
+  hideError();
+  clicks.push(e.latlng);
+
+  // Reset dropdowns if user clicks map to avoid confusion
+  startSelect.value = "";
+  endSelect.value = "";
+
+  if (clicks.length === 1) {
+    markers.push(L.marker(e.latlng, { icon: pinIcon('A', 'pin-start') }).addTo(map));
+    setStatus('Tap the map to set an end point', 'dot-end', false);
+    return;
+  }
+
+  markers.push(L.marker(e.latlng, { icon: pinIcon('B', 'pin-end') }).addTo(map));
+  calculateRoute(clicks[0], clicks[1]);
 });
 
 function clearMap() {
@@ -312,11 +292,66 @@ function clearMap() {
   if (currentRoute) map.removeLayer(currentRoute);
   currentRoute = null;
   isLoading = false;
-
+  
+  startSelect.value = "";
+  endSelect.value = "";
+  
   resultBox.classList.remove('show');
   hideError();
-  setStatus('Tap the map to set a start point', 'dot-idle', false);
+  setStatus('Ready to route', 'dot-idle', false);
 }
+
+async function loadGraphOverlay() {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/graph-data');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            L.polyline(data.edges, { color: '#3b82f6', weight: 3, opacity: 0.5, interactive: false }).addTo(map);
+        }
+    } catch (err) {
+        console.error("Failed to load graph overlay:", err);
+    }
+}
+
+function updateZoomClass() {
+    const zoom = map.getZoom();
+    const mapEl = document.getElementById('map');
+    mapEl.className = mapEl.className.replace(/\bmap-zoom-\d+\b/g, '');
+    mapEl.classList.add(`map-zoom-${zoom}`);
+}
+map.on('zoomend', updateZoomClass);
+updateZoomClass(); 
+
+async function loadLocations() {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/locations');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            data.locations.forEach(loc => {
+                // 1. Draw the label on the map
+                const labelIcon = L.divIcon({
+                    className: 'google-label',
+                    html: loc.name,
+                    iconSize: null, 
+                    iconAnchor: [0, 0] 
+                });
+                L.marker([loc.lat, loc.lng], { icon: labelIcon, interactive: false }).addTo(map);
+
+                // 2. Add to both dropdown menus
+                const optionValue = JSON.stringify({ lat: loc.lat, lng: loc.lng });
+                startSelect.add(new Option(loc.name, optionValue));
+                endSelect.add(new Option(loc.name, optionValue));
+            });
+        }
+    } catch (err) {
+        console.error("Failed to load locations:", err);
+    }
+}
+
+loadLocations();
+loadGraphOverlay(); 
 </script>
 </body>
 </html>

@@ -61,3 +61,27 @@ def find_nearest_node(graph, target_lat, target_lon):
             min_dist = dist
             nearest_node = node
     return nearest_node
+def extract_markers(kmz_path):
+    markers = []
+    with zipfile.ZipFile(kmz_path, 'r') as kmz:
+        kml_file = [f for f in kmz.namelist() if f.endswith('.kml')][0]
+        with kmz.open(kml_file, 'r') as f:
+            soup = BeautifulSoup(f, 'xml')
+            
+    for placemark in soup.find_all('Placemark'):
+        name_tag = placemark.find('name')
+        point_tag = placemark.find('Point')
+        
+        # If the placemark is a pin (Point) and has a name, save it
+        if name_tag and point_tag:
+            coords_text = point_tag.coordinates.text.strip()
+            # KML Point coordinates are Longitude, Latitude
+            lon, lat = map(float, coords_text.split(',')[:2])
+            markers.append({
+                "name": name_tag.text.strip(),
+                "lat": lat,
+                "lng": lon
+            })
+            
+    # Sort alphabetically by name so the search dropdown looks clean
+    return sorted(markers, key=lambda x: x['name'])
