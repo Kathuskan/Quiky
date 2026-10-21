@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Campus Navigator</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #2c4a3b;
+    --forest-dark: #1c3228;
+    --moss: #6b8f71;
+    --sand: #f4efe4;
+    --clay: #c96a4e;
+    --ink: #22281f;
+    --line: #dfd8c6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+  }
+
+  #map { height: 100vh; width: 100vw; background: #e9e4d6; }
+
+  #panel {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    z-index: 1000;
+    background: var(--sand);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(28, 50, 40, 0.18);
+    width: 280px;
+    overflow: hidden;
+  }
+
+  #panel-header {
+    background: var(--forest);
+    color: var(--sand);
+    padding: 14px 16px;
+  }
+
+  #panel-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+
+  #panel-body {
+    padding: 14px 16px 16px;
+  }
+
+  #status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: var(--ink);
+    min-height: 20px;
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-start { background: var(--moss); }
+  .dot-end { background: var(--clay); }
+  .dot-idle { background: #b7ae98; }
+
+  .spinner {
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--line);
+    border-top-color: var(--forest);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #result {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    display: none;
+  }
+  #result.show { display: block; }
+
+  #result .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  #result .stat-row span:first-child { color: #5b5a4e; }
+  #result .stat-row span:last-child { font-weight: 600; }
+
+  #error-msg {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: #fbeae4;
+    border: 1px solid #e6b6a3;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #8a3a22;
+    display: none;
+  }
+  #error-msg.show { display: block; }
+
+  #clear-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 9px;
+    background: var(--forest);
+    color: var(--sand);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  #clear-btn:hover { background: var(--forest-dark); }
+  #clear-btn:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; }
+
+  .campus-pin {
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    border: 2px solid var(--sand);
+  }
+  .campus-pin span {
+    transform: rotate(45deg);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pin-start { background: var(--moss); }
+  .pin-end { background: var(--clay); }
+
+  @media (max-width: 480px) {
+    #panel { width: calc(100vw - 36px); }
+  }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <div id="panel-header">
+    <h1>Campus Navigator</h1>
+  </div>
+  <div id="panel-body">
+    <div id="status-line">
+      <span class="dot dot-idle"></span>
+      <span id="status-text">Tap the map to set a start point</span>
+    </div>
+
+    <div id="result">
+      <div class="stat-row"><span>Distance</span><span id="stat-distance">—</span></div>
+      <div class="stat-row"><span>Est. walk</span><span id="stat-time">—</span></div>
+    </div>
+
+    <div id="error-msg"></div>
+
+    <button id="clear-btn" onclick="clearMap()">Clear route</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+const BACKEND_URL = 'http://127.0.0.1:8000/route';
+
+// Centered on Sabaragamuwa University
+const map = L.map('map', { zoomControl: false }).setView([6.713, 80.789], 16);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// Load Google Maps Satellite Hybrid tiles
+L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '© Google'
+}).addTo(map);
+
+let clicks = [];
+let markers = [];
+let currentRoute = null;
+let isLoading = false;
+
+const statusDot = document.querySelector('#status-line .dot');
+const statusText = document.getElementById('status-text');
+const resultBox = document.getElementById('result');
+const errorBox = document.getElementById('error-msg');
+const statDistance = document.getElementById('stat-distance');
+const statTime = document.getElementById('stat-time');
+
+function pinIcon(label, cls) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="campus-pin ${cls}"><span>${label}</span></div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 26]
+  });
+}
+
+function setStatus(text, dotClass, spinning) {
+  statusText.textContent = text;
+  if (spinning) {
+    statusDot.outerHTML = '<span class="spinner"></span>';
+  } else {
+    const el = document.querySelector('#status-line .dot, #status-line .spinner');
+    el.outerHTML = `<span class="dot ${dotClass}"></span>`;
+  }
+}
+
+function showError(message) {
+  errorBox.textContent = message;
+  errorBox.classList.add('show');
+}
+
+function hideError() {
+  errorBox.classList.remove('show');
+}
+
+function metersToWalkTime(meters) {
+  // Rough estimate at 5 km/h walking pace
+  const minutes = meters / 1000 / 5 * 60;
+  if (minutes < 1) return '< 1 min';
+  return Math.round(minutes) + ' min';
+}
+
+map.on('click', async function(e) {
+  // Still prevent clicking if we are currently waiting for the Python backend
+  if (isLoading) return; 
+
+  // If two markers are already on the map, clear everything to start a fresh route
+  if (clicks.length >= 2) {
+      clearMap();
+  }
+
+  hideError();
+  clicks.push(e.latlng);
+
+  if (clicks.length === 1) {
+    markers.push(L.marker(e.latlng, { icon: pinIcon('A', 'pin-start') }).addTo(map));
+    setStatus('Tap the map to set an end point', 'dot-end', false);
+    return;
+  }
+
+  markers.push(L.marker(e.latlng, { icon: pinIcon('B', 'pin-end') }).addTo(map));
+  isLoading = true;
+  setStatus('Finding the shortest path…', null, true);
+
+  const url = `${BACKEND_URL}?start_lat=${clicks[0].lat}&start_lon=${clicks[0].lng}&end_lat=${clicks[1].lat}&end_lon=${clicks[1].lng}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+    const data = await response.json();
+
+    if (data.status === 'success') {
+      const routeCoordinates = data.path.map(p => [p.lat, p.lng]);
+      currentRoute = L.polyline(routeCoordinates, {
+        color: '#ffffff', // Changed from #2c4a3b to white
+        weight: 5,
+        opacity: 0.95, // Slightly increased opacity so white pops against the satellite background
+        lineJoin: 'round'
+      }).addTo(map);
+      map.fitBounds(currentRoute.getBounds(), { padding: [40, 40] });
+
+      statDistance.textContent = `${Math.round(data.distance)} m`;
+      statTime.textContent = metersToWalkTime(data.distance);
+      resultBox.classList.add('show');
+      setStatus('Route found', 'dot-end', false);
+    } else {
+      showError('No path could be found between these two points. Try picking locations closer to a walkway.');
+      setStatus('No route found — try again', 'dot-idle', false);
+    }
+  } catch (err) {
+    showError('Could not reach the routing server. Make sure the backend is running at ' + BACKEND_URL.replace('/route', '') + '.');
+    setStatus('Connection error', 'dot-idle', false);
+  } finally {
+    isLoading = false;
+  }
+});
+
+function clearMap() {
+  clicks = [];
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  if (currentRoute) map.removeLayer(currentRoute);
+  currentRoute = null;
+  isLoading = false;
+
+  resultBox.classList.remove('show');
+  hideError();
+  setStatus('Tap the map to set a start point', 'dot-idle', false);
+}
+</script>
+</body>
+</html>
