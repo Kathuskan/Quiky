@@ -2,7 +2,7 @@ import zipfile
 import re
 from bs4 import BeautifulSoup
 
-with zipfile.ZipFile('SABRA.kmz', 'r') as kmz:
+with zipfile.ZipFile('SABRA.kmz-2', 'r') as kmz:
     kml_file = [f for f in kmz.namelist() if f.endswith('.kml')][0]
     with kmz.open(kml_file, 'r') as f:
         soup = BeautifulSoup(f, 'xml')
