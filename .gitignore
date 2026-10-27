@@ -47,7 +47,6 @@ coverage.xml
 logs/
 
 # ── Research data output (keep source data, ignore generated results) ────────
-figures/
 csv/
 *.csv
 *.json
