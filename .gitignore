@@ -47,7 +47,11 @@ coverage.xml
 logs/
 
 # ── Research data output (keep source data, ignore generated results) ────────
-results/
+figures/
+csv/
 *.csv
 *.json
 !package.json
+*.tex
+research_analysis.ipynb
+outputs/
